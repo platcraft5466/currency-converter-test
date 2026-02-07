@@ -1,0 +1,15 @@
+{
+  // Schema for editor autocomplete and validation
+  "$schema": "./node_modules/wrangler/config-schema.json",
+
+  // Worker name (used for workers.dev subdomain and in dashboard)
+  // Must be alphanumeric + dashes, max 63 chars for workers.dev
+  "name": "apiclaude-hello-world",
+
+  // Entry point for your Worker code
+  "main": "src/index.ts",
+
+  // Compatibility date determines which runtime APIs are available
+  // Use today's date: 2026-02-06
+  "compatibility_date": "2026-02-06"
+}

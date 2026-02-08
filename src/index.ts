@@ -39,24 +39,6 @@ export default {
 
     // Route handling
     switch (pathname) {
-      case '/':
-      case '/hello':
-        return new Response(
-          JSON.stringify({
-            message: 'Hello World!',
-            timestamp: new Date().toISOString(),
-            worker: 'APiClaude Hello World API',
-            version: '1.0.0'
-          }),
-          {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache'
-            }
-          }
-        );
-
       case '/health':
         return new Response(
           JSON.stringify({
@@ -79,7 +61,7 @@ export default {
           JSON.stringify({
             error: 'Not found',
             message: `Path ${pathname} does not exist`,
-            available_endpoints: ['/', '/hello', '/health', '/convert']
+            available_endpoints: ['/health', '/convert']
           }),
           {
             status: 404,

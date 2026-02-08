@@ -22,6 +22,11 @@ const createMockExecutionContext = (): ExecutionContext => ({
 // Mock Env for testing (empty for now)
 const mockEnv = {} as Env;
 
+// Helper to parse JSON response with proper typing
+const parseResponse = async (response: Response): Promise<any> => {
+  return await response.json() as any;
+};
+
 describe('Cloudflare Worker Integration Tests', () => {
   describe('Method validation', () => {
     it('should allow GET requests', async () => {
@@ -47,7 +52,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       // Verify the Allow header indicates only GET is supported
       expect(response.headers.get('Allow')).toBe('GET');
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       // Verify error response structure
       expect(data.error).toBe('Method not allowed');
@@ -64,7 +69,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       expect(response.status).toBe(405);
       expect(response.headers.get('Allow')).toBe('GET');
 
-      const data = await response.json();
+      const data = await parseResponse(response);
       expect(data.error).toBe('Method not allowed');
     });
 
@@ -77,7 +82,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       expect(response.status).toBe(405);
       expect(response.headers.get('Allow')).toBe('GET');
 
-      const data = await response.json();
+      const data = await parseResponse(response);
       expect(data.error).toBe('Method not allowed');
     });
 
@@ -106,7 +111,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Type')).toBe('application/json');
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       // Verify health check response structure
       expect(data).toMatchObject({
@@ -127,7 +132,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       // Verify successful response (not 404)
       expect(response.status).toBe(200);
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       // Verify the conversion endpoint returns conversion data
       expect(data.converted_amount).toBeDefined();
@@ -143,7 +148,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       expect(response.status).toBe(404);
       expect(response.headers.get('Content-Type')).toBe('application/json');
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       // Verify 404 error response structure
       expect(data.error).toBe('Not found');
@@ -165,7 +170,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       // Verify 404 Not Found response
       expect(response.status).toBe(404);
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       // Verify error mentions the root path
       expect(data.message).toContain('/');
@@ -186,7 +191,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       expect(response.headers.get('Content-Type')).toBe('application/json');
       expect(response.headers.get('Cache-Control')).toBe('no-cache');
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       // Verify complete response structure
       expect(data).toMatchObject({
@@ -217,7 +222,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       expect(response.status).toBe(400);
       expect(response.headers.get('Content-Type')).toBe('application/json');
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       // Verify error response structure
       expect(data.error).toBe('Invalid parameters');
@@ -237,7 +242,7 @@ describe('Cloudflare Worker Integration Tests', () => {
       // Verify 400 Bad Request response for unsupported pair
       expect(response.status).toBe(400);
 
-      const data = await response.json();
+      const data = await parseResponse(response);
 
       // Verify error indicates the USD requirement
       expect(data.error).toBe('Invalid parameters');

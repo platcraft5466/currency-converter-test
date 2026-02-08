@@ -1,0 +1,129 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests Before Deploy
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate exchange rate data
+        run: npm run prebuild
+
+      - name: Run type check
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    name: Deploy to Cloudflare Workers
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate exchange rate data
+        run: npm run prebuild
+
+      - name: Deploy to Cloudflare Workers
+        run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Wait for deployment to propagate
+        run: sleep 10
+
+      - name: Run smoke tests
+        run: |
+          echo "🧪 Running smoke tests..."
+
+          # Get the worker URL from wrangler
+          WORKER_URL="https://apiclaude-hello-world.steve-bakanov.workers.dev"
+
+          # Test 1: Health check endpoint
+          echo "Testing /health endpoint..."
+          HEALTH_RESPONSE=$(curl -s -w "\n%{http_code}" "$WORKER_URL/health")
+          HEALTH_STATUS=$(echo "$HEALTH_RESPONSE" | tail -n1)
+          HEALTH_BODY=$(echo "$HEALTH_RESPONSE" | head -n-1)
+
+          if [ "$HEALTH_STATUS" != "200" ]; then
+            echo "❌ Health check failed with status: $HEALTH_STATUS"
+            exit 1
+          fi
+
+          if ! echo "$HEALTH_BODY" | grep -q '"status":"ok"'; then
+            echo "❌ Health check response invalid: $HEALTH_BODY"
+            exit 1
+          fi
+          echo "✅ Health check passed"
+
+          # Test 2: Currency conversion endpoint
+          echo "Testing /convert endpoint..."
+          CONVERT_URL="$WORKER_URL/convert?amount=100&from=United%20States-Dollar&to=Canada-Dollar"
+          CONVERT_RESPONSE=$(curl -s -w "\n%{http_code}" "$CONVERT_URL")
+          CONVERT_STATUS=$(echo "$CONVERT_RESPONSE" | tail -n1)
+          CONVERT_BODY=$(echo "$CONVERT_RESPONSE" | head -n-1)
+
+          if [ "$CONVERT_STATUS" != "200" ]; then
+            echo "❌ Convert endpoint failed with status: $CONVERT_STATUS"
+            exit 1
+          fi
+
+          if ! echo "$CONVERT_BODY" | grep -q '"convertedAmount"'; then
+            echo "❌ Convert response invalid: $CONVERT_BODY"
+            exit 1
+          fi
+          echo "✅ Convert endpoint passed"
+
+          # Test 3: Invalid request handling
+          echo "Testing error handling..."
+          ERROR_URL="$WORKER_URL/convert?amount=abc&from=USD&to=CAD"
+          ERROR_RESPONSE=$(curl -s -w "\n%{http_code}" "$ERROR_URL")
+          ERROR_STATUS=$(echo "$ERROR_RESPONSE" | tail -n1)
+
+          if [ "$ERROR_STATUS" = "200" ]; then
+            echo "❌ Error handling failed - invalid request returned 200"
+            exit 1
+          fi
+          echo "✅ Error handling passed"
+
+          echo "🎉 All smoke tests passed!"
+
+      - name: Deployment success
+        if: success()
+        run: |
+          echo "✅ Successfully deployed to Cloudflare Workers"
+          echo "Worker: apiclaude-hello-world"
+          echo "All smoke tests passed - API is healthy"

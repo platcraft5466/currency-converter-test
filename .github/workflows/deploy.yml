@@ -83,7 +83,7 @@ jobs:
             exit 1
           fi
 
-          if ! echo "$HEALTH_BODY" | grep -q '"status":"ok"'; then
+          if ! echo "$HEALTH_BODY" | grep -q '"status":"healthy"'; then
             echo "❌ Health check response invalid: $HEALTH_BODY"
             exit 1
           fi

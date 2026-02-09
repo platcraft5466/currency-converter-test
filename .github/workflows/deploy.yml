@@ -101,7 +101,7 @@ jobs:
             exit 1
           fi
 
-          if ! echo "$CONVERT_BODY" | grep -q '"convertedAmount"'; then
+          if ! echo "$CONVERT_BODY" | grep -q '"converted_amount"'; then
             echo "❌ Convert response invalid: $CONVERT_BODY"
             exit 1
           fi

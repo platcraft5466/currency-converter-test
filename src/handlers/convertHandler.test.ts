@@ -39,7 +39,8 @@ describe('handleConvert()', () => {
         to: 'Canada-Dollar',
         converted_amount: expect.any(Number),
         rate: expect.any(Number),
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
+        total_currencies: expect.any(Number)
       });
 
       // Verify conversion logic: 100 USD should convert to more than 100 CAD
@@ -68,7 +69,8 @@ describe('handleConvert()', () => {
         to: 'United States-Dollar',
         converted_amount: expect.any(Number),
         rate: expect.any(Number),
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
+        total_currencies: expect.any(Number)
       });
 
       // Verify conversion logic: 150 CAD should convert to less than 150 USD
@@ -153,6 +155,42 @@ describe('handleConvert()', () => {
       const now = new Date();
       const timeDiff = now.getTime() - timestamp.getTime();
       expect(timeDiff).toBeLessThan(60000); // Less than 1 minute
+    });
+
+    it('should include total_currencies count in response', async () => {
+      // Verify the response includes the count of supported currencies
+      const request = new Request(
+        `http://localhost:8787/convert?amount=100&from=${encodeURIComponent('United States-Dollar')}&to=${encodeURIComponent('Canada-Dollar')}`
+      );
+
+      const response = await handleConvert(request);
+      const data = await response.json();
+
+      // Verify total_currencies field exists and is a positive number
+      expect(data.total_currencies).toBeDefined();
+      expect(typeof data.total_currencies).toBe('number');
+      expect(data.total_currencies).toBeGreaterThan(0);
+
+      // Verify it matches the actual currency count (currently 168)
+      expect(data.total_currencies).toBe(168);
+    });
+
+    it('should include consistent total_currencies across different conversions', async () => {
+      // Verify the currency count is consistent across different conversions
+      const request1 = new Request(
+        `http://localhost:8787/convert?amount=100&from=${encodeURIComponent('United States-Dollar')}&to=${encodeURIComponent('Canada-Dollar')}`
+      );
+      const response1 = await handleConvert(request1);
+      const data1 = await response1.json();
+
+      const request2 = new Request(
+        `http://localhost:8787/convert?amount=50&from=${encodeURIComponent('Japan-Yen')}&to=${encodeURIComponent('United States-Dollar')}`
+      );
+      const response2 = await handleConvert(request2);
+      const data2 = await response2.json();
+
+      // Both responses should have the same currency count
+      expect(data1.total_currencies).toBe(data2.total_currencies);
     });
   });
 

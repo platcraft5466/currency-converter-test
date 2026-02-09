@@ -30,6 +30,7 @@ export interface ConversionResponse {
   converted_amount: number;
   rate: number;
   timestamp: string;
+  total_currencies: number;
 }
 
 /**

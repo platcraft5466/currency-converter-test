@@ -5,6 +5,7 @@
 import { validateQueryParams } from '../utils/validation';
 import { convert, getEffectiveRate } from '../utils/converter';
 import type { ConversionResponse } from '../types';
+import { exchangeRates } from '../data/exchangeRates';
 
 /**
  * Handle currency conversion requests
@@ -56,7 +57,8 @@ export async function handleConvert(request: Request): Promise<Response> {
       to,
       converted_amount: convertedAmount,
       rate: effectiveRate ?? 1.0,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      total_currencies: exchangeRates.size
     };
 
     return new Response(JSON.stringify(response), {

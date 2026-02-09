@@ -70,7 +70,7 @@ jobs:
           echo "🧪 Running smoke tests..."
 
           # Get the worker URL from wrangler
-          WORKER_URL="https://apiclaude-hello-world.steve-bakanov.workers.dev"
+          WORKER_URL="https://currency-converter-test.mrkbvktr.workers.dev"
 
           # Test 1: Health check endpoint
           echo "Testing /health endpoint..."
